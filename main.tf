@@ -21,3 +21,12 @@ module "vpc" {
   private_subnets = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
   environment     = "dev"
 }
+
+module "eks" {
+  source          = "./modules/eks"
+  cluster_name    = "omc-eks-cluster"
+  cluster_version = "1.28"
+  subnet_ids      = module.vpc.private_subnets
+  vpc_id          = module.vpc.vpc_id
+  environment     = "dev"
+}
