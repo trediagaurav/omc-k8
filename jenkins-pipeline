@@ -1,0 +1,42 @@
+pipeline {
+  agent {
+    kubernetes {
+      yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: builder
+    image: buildpack-deps:jammy
+    command:
+    - cat
+    tty: true
+"""
+      defaultContainer 'builder'
+    }
+  }
+  stages {
+    stage('Clone Repo') {
+      steps {
+        git 'https://github.com/curl/curl.git'
+      }
+    }
+    stage('Build') {
+      steps {
+        sh 'apt-get update && apt-get install -y autoconf automake libtool pkg-config make gcc g++ libssl-dev libpsl-dev'
+        sh './buildconf || autoreconf -fi'
+        sh './configure --with-openssl && make'
+      }
+    }
+    stage('Quick Test') {
+      steps {
+        sh './src/curl --version'
+      }
+    }
+    stage('Archive') {
+      steps {
+        archiveArtifacts artifacts: '**/src/curl', fingerprint: true
+      }
+    }
+  }
+}
